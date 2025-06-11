@@ -107,14 +107,11 @@ FLUJOS CONFIRMADOS
 
 ---
 
-PENDIENTE POR IMPLEMENTAR (Siguientes módulos):
-- config/database.php
-- core/funciones.php
-- auth/login.php
-- auth/registrar_afiliado.php
-- validación de sesión con auth.php
-- lógica QR por afiliado
-- lógica de reservas + aplicación de descuento
+PRÓXIMOS PASOS
+--------------
+- Usar variables de entorno para las credenciales de la base de datos.
+- Agregar pruebas automáticas para validar el código.
+- Incluir un archivo .gitignore y limpiar logs versionados.
 
 ---
 
@@ -124,3 +121,4 @@ Todo el sistema está modularizado para escalarse a futuro.
 Paneles diferenciados por rol.
 Listo para integrarse visualmente a WordPress como frontend (opcional).
 Compatible con pasarela Mercado Pago.
+
