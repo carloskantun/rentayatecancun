@@ -1,0 +1,76 @@
+/* ======== PERSONALIZACIÓN RENTA YATE CANCUN ======== */
+
+/* Tipografías */
+body {
+  font-family: 'Open Sans', sans-serif;
+}
+h1, h2, h3, h4, h5 {
+  font-family: 'Montserrat', sans-serif;
+  color: #002E5D;
+  font-weight: 600;
+}
+
+/* Hero con overlay oscuro */
+.hero-section {
+  position: relative;
+  color: white;
+  background-color: #002E5D;
+}
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4); /* oscurece imagen */
+  z-index: 1;
+}
+.hero-section > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Botones */
+.btn-primary {
+  background-color: #00CFC1;
+  border-color: #00CFC1;
+  color: #002E5D;
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background-color: #00b3a9;
+  border-color: #00b3a9;
+  color: #fff;
+}
+
+/* Fondo claro de secciones */
+.section-light {
+  background-color: #FFF5E1;
+}
+
+/* Footer mejorado */
+footer {
+  background-color: #002E5D;
+  color: white;
+}
+footer a {
+  color: #00CFC1;
+}
+footer a:hover {
+  color: #D4AF37;
+}
+
+/* Cards con sombra */
+.card {
+  border: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  border-radius: 12px;
+}
+
+/* Etiqueta de precio o VIP */
+.badge-premium {
+  background-color: #D4AF37;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}

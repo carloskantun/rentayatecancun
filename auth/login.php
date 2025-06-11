@@ -1,0 +1,75 @@
+<?php
+require_once '../config/database.php';
+require_once '../core/funciones.php';
+require_once '../core/auth.php';
+
+$mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = sanitize($_POST['email']);
+    $password = $_POST['password'];
+
+    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = :email LIMIT 1");
+    $stmt->execute(['email' => $email]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($usuario && password_verify($password, $usuario['password'])) {
+        if ($usuario['estado'] === 'activo') {
+            $_SESSION['usuario'] = [
+                'id' => $usuario['id'],
+                'nombre' => $usuario['nombre'],
+                'email' => $usuario['email'],
+                'rol' => $usuario['rol']
+            ];
+
+            // Redirección según rol
+            switch ($usuario['rol']) {
+                case 'admin':
+                case 'moderador':
+                    header("Location: /panel_admin/dashboard.php");
+                    break;
+                case 'afiliado':
+                    header("Location: /panel_afiliado/dashboard.php");
+                    break;
+                case 'cliente':
+                    header("Location: /index.php");
+                    break;
+                default:
+                    header("Location: /index.php");
+            }
+            exit;
+        } else {
+            $mensaje = "Tu cuenta está inactiva. Contacta al administrador.";
+        }
+    } else {
+        $mensaje = "Correo o contraseña incorrectos.";
+    }
+}
+?>
+<?php include('../templates/header.php'); ?>
+
+
+<div class="card p-4 shadow-sm" style="max-width: 400px; width: 100%;">
+    <h2 class="text-center mb-3">Iniciar Sesión</h2>
+    <form method="post">
+        <div class="mb-3">
+            <input type="email" name="email" class="form-control" placeholder="Correo electrónico" required>
+        </div>
+        <div class="mb-3">
+            <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+    </form>
+    <p class="mt-3 text-center"><a href="#">¿Olvidaste tu contraseña?</a></p>
+    <div class="register-info text-center mt-4">
+        <p>¿No tienes cuenta? <a href="registrar_afiliado.php" class="btn btn-outline-secondary">Crear cuenta</a></p>
+    </div>
+</div>
+
+<?php if ($mensaje): ?>
+    <p class="text-danger text-center"><?php echo $mensaje; ?></p>
+<?php endif; ?>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php include('../templates/footer.php'); ?>

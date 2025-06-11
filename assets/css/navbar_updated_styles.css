@@ -1,0 +1,109 @@
+
+/* Estilo general para el body */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar general */
+.navbar {
+    background-color: #2c3e50; /* Fondo oscuro para el navbar */
+    padding: 10px 0;
+    color: white;
+    position: fixed;
+    width: 250px;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar - Items del menú */
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column; /* Poner los elementos en una columna */
+    align-items: flex-start; /* Alinear los elementos a la izquierda */
+}
+
+.nav-list li {
+    margin: 10px 0; /* Espaciado entre los items */
+    width: 100%;
+}
+
+.nav-list li a {
+    color: white;
+    text-decoration: none;
+    padding: 12px 25px;
+    width: 100%;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+.nav-list li a:hover {
+    background-color: #34495e;
+    border-radius: 5px;
+}
+
+/* Navbar para pantallas grandes */
+@media (min-width: 768px) {
+    .navbar {
+        width: 250px; /* Ancho fijo para pantallas grandes */
+    }
+
+    .nav-list li {
+        width: 100%;
+    }
+}
+
+/* Contenido principal - Ajuste para el layout */
+.container {
+    margin-left: 260px; /* Aseguramos que el contenido no se mezcle con el navbar */
+    padding: 20px;
+    background-color: #fff;
+}
+
+/* Menú hamburguesa para pantallas pequeñas */
+.menu-toggle {
+    display: none;
+    background-color: transparent;
+    border: none;
+    font-size: 30px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Mostrar el menú hamburguesa en pantallas pequeñas */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+        margin-left: auto;
+        padding: 10px;
+    }
+
+    .navbar {
+        position: absolute;
+        width: 0;
+        height: 100%;
+        left: 0;
+        transition: width 0.3s ease;
+    }
+
+    .nav-list {
+        display: none;
+    }
+
+    .navbar.show {
+        width: 250px; /* Mostrar navbar cuando se activa */
+    }
+
+    .nav-list.show {
+        display: flex;
+    }
+}

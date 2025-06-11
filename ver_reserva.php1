@@ -1,0 +1,113 @@
+<?php
+require_once 'config/database.php';
+require_once 'core/funciones.php';
+
+$codigo = $_GET['codigo'] ?? null;
+$reserva = null;
+$temporal = false;
+$mensaje = null;
+
+// Buscar si se envió código por formulario
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $codigo = sanitize($_POST['codigo']);
+    header("Location: ver_reserva.php?codigo=" . urlencode($codigo));
+    exit;
+}
+
+// Si hay código, buscar la reserva
+if ($codigo) {
+    $stmt = $pdo->prepare("SELECT * FROM reservas WHERE codigo_reserva = :codigo LIMIT 1");
+    $stmt->execute(['codigo' => $codigo]);
+    $reserva = $stmt->fetch(PDO::FETCH_ASSOC);
+    $temporal = false;
+
+    // Si no está en definitivas, buscar en temporales
+    if (!$reserva) {
+        $stmt = $pdo->prepare("SELECT * FROM reservas_temp WHERE codigo_reserva = :codigo LIMIT 1");
+        $stmt->execute(['codigo' => $codigo]);
+        $reserva = $stmt->fetch(PDO::FETCH_ASSOC);
+        $temporal = true;
+    }
+
+    // Nombre del afiliado si existe
+    $nombreAfiliado = 'Venta directa';
+    if (!empty($reserva['slug_afiliado'])) {
+        $stmt = $pdo->prepare("SELECT u.nombre FROM afiliados a JOIN usuarios u ON u.id = a.usuario_id WHERE a.slug_personalizado = :slug LIMIT 1");
+        $stmt->execute(['slug' => $reserva['slug_afiliado']]);
+        $nombreAfiliado = $stmt->fetchColumn() ?: 'Afiliado';
+    }
+
+    // Nombre del barco si ya fue asignado
+    $nombreBarco = null;
+    if (!$temporal && !empty($reserva['salida_id'])) {
+        $stmt = $pdo->prepare("SELECT nombre_barco FROM salidas WHERE id = :id");
+        $stmt->execute(['id' => $reserva['salida_id']]);
+        $nombreBarco = $stmt->fetchColumn();
+    }
+}
+?>
+
+<?php include 'templates/header.php'; ?>
+
+<section class="space-top space-extra-bottom">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2>Consulta tu Reserva</h2>
+      <p>Ingresa el código que recibiste por correo para conocer el estado de tu reservación.</p>
+    </div>
+
+    <?php if (!$codigo): ?>
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <form method="post" class="card p-4 shadow-sm">
+            <div class="mb-3">
+              <label class="form-label">Código de Reserva</label>
+              <input type="text" name="codigo" class="form-control" placeholder="Ej. RYC-XXXXXX" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Consultar</button>
+          </form>
+        </div>
+      </div>
+
+    <?php elseif (!$reserva): ?>
+      <div class="alert alert-danger text-center">
+        No se encontró ninguna reserva con el código <strong><?php echo htmlspecialchars($codigo); ?></strong>.
+      </div>
+
+    <?php else: ?>
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="mb-3">Código: <strong><?php echo $reserva['codigo_reserva']; ?></strong></h5>
+          <ul class="list-group">
+              <li class="list-group-item"><strong>Nombre:</strong> <?php echo htmlspecialchars($reserva['nombre_cliente'] ?? ''); ?></li>
+              <li class="list-group-item"><strong>Fecha deseada:</strong> <?php echo $reserva['fecha_reserva']; ?></li>
+              <li class="list-group-item"><strong>Horario:</strong> <?php echo $reserva['hora_deseada']; ?></li>
+              <?php if (!empty($reserva['acompanante_nombre'])): ?>
+                <li class="list-group-item"><strong>Acompañante:</strong> <?php echo $reserva['acompanante_nombre']; ?></li>
+              <?php endif; ?>
+              <li class="list-group-item"><strong>Teléfono:</strong> <?php echo $reserva['telefono_cliente']; ?></li>
+              <li class="list-group-item"><strong>Email:</strong> <?php echo $reserva['email_cliente']; ?></li>
+              <li class="list-group-item"><strong>Reservado por:</strong> <?php echo $nombreAfiliado; ?></li>
+              <li class="list-group-item"><strong>Yate asignado:</strong> <?php echo $nombreBarco ?: 'Por asignar'; ?></li>
+              <li class="list-group-item"><strong>Total:</strong> $<?php echo number_format($reserva['monto_total'], 2); ?> USD</li>
+              <li class="list-group-item">
+                  <strong>Estado de pago:</strong>
+                  <?php
+                      if (!$temporal && $reserva['status_pago'] === 'aprobado') {
+                          echo "<span class='text-success fw-bold'>Pago aprobado</span>";
+                      } elseif ($temporal) {
+                          echo "<span class='text-warning fw-bold'>Pendiente de pago</span>";
+                          echo "<br><a href='reservar.php?codigo=" . urlencode($codigo) . "' class='btn btn-sm btn-outline-primary mt-2'>Reintentar pago</a>";
+                      } else {
+                          echo "<span class='text-danger fw-bold'>Rechazado o incompleto</span>";
+                      }
+                  ?>
+              </li>
+          </ul>
+        </div>
+      </div>
+    <?php endif; ?>
+  </div>
+</section>
+
+<?php include 'templates/footer.php'; ?>

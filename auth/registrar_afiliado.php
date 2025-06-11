@@ -1,0 +1,134 @@
+<?php
+require_once '../config/database.php';
+require_once '../core/funciones.php';
+
+$mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = sanitize($_POST['nombre']);
+    $email = sanitize($_POST['email']);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $telefono = sanitize($_POST['telefono']);
+    $slug_manual = sanitize($_POST['slug']);
+    $slug = $slug_manual !== '' ? slugify($slug_manual) : slugify($nombre);
+
+    // Foto INE
+    $foto_ine_path = null;
+    if (!empty($_FILES['foto_ine']['tmp_name'])) {
+        $carpeta = 'assets/ine/';
+        if (!is_dir(__DIR__ . '/../' . $carpeta)) mkdir(__DIR__ . '/../' . $carpeta, 0755, true);
+        $filename = uniqid('ine_') . '.' . pathinfo($_FILES['foto_ine']['name'], PATHINFO_EXTENSION);
+        move_uploaded_file($_FILES['foto_ine']['tmp_name'], __DIR__ . '/../' . $carpeta . $filename);
+        $foto_ine_path = $carpeta . $filename;
+    }
+
+    // Validar correo
+    $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
+    $stmt->execute(['email' => $email]);
+    if ($stmt->rowCount() > 0) {
+        $mensaje = "Este correo ya está registrado.";
+    } else {
+        // Validar slug único
+        $base_slug = $slug;
+        $i = 1;
+        while (true) {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM afiliados WHERE slug_personalizado = :slug");
+            $stmt->execute(['slug' => $slug]);
+            if ($stmt->fetchColumn() == 0) break;
+            $slug = $base_slug . '-' . $i++;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            // Crear usuario
+            $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, password, rol, estado, telefono, foto_ine)
+                                   VALUES (:nombre, :email, :password, 'afiliado', 'inactivo', :telefono, :foto_ine)");
+            $stmt->execute([
+                'nombre' => $nombre,
+                'email' => $email,
+                'password' => $password,
+                'telefono' => $telefono,
+                'foto_ine' => $foto_ine_path
+            ]);
+            $usuario_id = $pdo->lastInsertId();
+
+            // Generar QR
+            $qr_filename = "qr_" . $slug . ".png";
+            $qr_dir = 'assets/qr/';
+            $qr_path = $qr_dir . $qr_filename;
+            $link = base_url() . "/reservar.php?a=" . urlencode($slug);
+            $url = "https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=" . urlencode($link);
+
+            if (!is_dir(__DIR__ . '/../' . $qr_dir)) {
+                mkdir(__DIR__ . '/../' . $qr_dir, 0755, true);
+            }
+
+            $qr_guardado = null;
+            $image = @file_get_contents($url);
+            if ($image) {
+                file_put_contents(__DIR__ . '/../' . $qr_path, $image);
+                $qr_guardado = $qr_path;
+            }
+
+            // Insertar afiliado
+            $stmt = $pdo->prepare("INSERT INTO afiliados (usuario_id, slug_personalizado, estado, qr_code)
+                                   VALUES (:usuario_id, :slug, 'inactivo', :qr)");
+            $stmt->execute([
+                'usuario_id' => $usuario_id,
+                'slug' => $slug,
+                'qr' => $qr_guardado
+            ]);
+
+            $pdo->commit();
+            $mensaje = "Registro exitoso. Un administrador aprobará tu cuenta.";
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $mensaje = "Error al registrar. Intenta más tarde.";
+        }
+    }
+}
+?>
+
+
+<?php include('../templates/header.php'); ?>
+
+<section class="py-5" style="background-color: #f9f9f9; min-height: 100vh;">
+  <div class="container d-flex justify-content-center align-items-center">
+    <div class="card p-4 shadow" style="max-width: 450px; width: 100%;">
+      <h2 class="text-center mb-4">Registro de Afiliado</h2>
+      <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Correo electrónico</label>
+          <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="telefono" class="form-label">Teléfono</label>
+          <input type="text" id="telefono" name="telefono" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Contraseña</label>
+          <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="slug" class="form-label">Slug para micrositio</label>
+          <input type="text" id="slug" name="slug" class="form-control" placeholder="ej. juan-yates">
+        </div>
+        <div class="mb-3">
+          <label for="foto_ine" class="form-label">Foto de INE</label>
+          <input type="file" id="foto_ine" name="foto_ine" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+      </form>
+      <?php if (!empty($mensaje)): ?>
+        <div class="mt-3 text-center text-success"><?php echo $mensaje; ?></div>
+      <?php endif; ?>
+      <p class="text-center mt-3"><a href="login.php">¿Ya tienes cuenta? Inicia sesión</a></p>
+    </div>
+  </div>
+</section>
+<?php include('../templates/footer.php'); ?>
