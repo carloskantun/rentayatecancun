@@ -1,4 +1,4 @@
-PROYECTO: Sistema de Reservas y Afiliados – Prestige Nauticlub
+PROYECTO: Sistema de Reservas y Afiliados – Yachts System
 Versión: 1.0 (Estructura Base)
 Fecha de inicio: Marzo 2025
 Autor: Carlos Kantun
