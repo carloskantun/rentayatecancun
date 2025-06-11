@@ -1,4 +1,4 @@
-# Prestige Nauticlub Reservation System
+# Yacht Reservation System
 
 Este repositorio contiene el código del sistema de reservas y afiliados utilizado en Rentayate Cancún. Incluye paneles separados por rol, generación de códigos QR para afiliados y pago a través de Mercado Pago.
 
